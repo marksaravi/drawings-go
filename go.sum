@@ -1,0 +1,16 @@
+github.com/jonboulle/clockwork v0.2.2/go.mod h1:Pkfl5aHPm1nk2H9h0bjmnJD/BcgbGXUBGnn1kMkgxc8=
+github.com/marksaravi/devices-go v1.8.0 h1:3fRyY2l9vBKRLCoapELfLEfchWPLJk4H4jEJNItQRkw=
+github.com/marksaravi/devices-go v1.8.0/go.mod h1:OkNY88nVu4etJxvU8iH1k2q6zdC2t9cEFESFDzNeu+g=
+github.com/marksaravi/fonts-go v0.1.0 h1:EjR3Qxjs4yA24dLrmk4pe3CXiJfGVvUaCwsgPjGPpNA=
+github.com/marksaravi/fonts-go v0.1.0/go.mod h1:G20Ju8c7mDqQFqjhHwP2yjDM4Upc0BYIEh00NSWDGHY=
+github.com/marksaravi/fonts-go v0.2.0 h1:QfJV2KyZ962dFEOV+j+btSu9C55oGcL8QMtchXUUijQ=
+github.com/marksaravi/fonts-go v0.2.0/go.mod h1:G20Ju8c7mDqQFqjhHwP2yjDM4Upc0BYIEh00NSWDGHY=
+github.com/marksaravi/fonts-go v0.3.0 h1:92knXtGoDzZRzoZs5Qqa9hEKcpLsDgS2RjS/IZzRd3I=
+github.com/marksaravi/fonts-go v0.3.0/go.mod h1:G20Ju8c7mDqQFqjhHwP2yjDM4Upc0BYIEh00NSWDGHY=
+github.com/marksaravi/fonts-go v0.4.0 h1:NdtbP9J/UAeEcRELGtlxPoVRwVGjnJeDanyHg4EdBcM=
+github.com/marksaravi/fonts-go v0.4.0/go.mod h1:G20Ju8c7mDqQFqjhHwP2yjDM4Upc0BYIEh00NSWDGHY=
+periph.io/x/conn/v3 v3.6.10 h1:gwU4ssmZkq1D/uz8hU91i/COo2c9DrRaS4PJZBbCd+c=
+periph.io/x/conn/v3 v3.6.10/go.mod h1:UqWNaPMosWmNCwtufoTSTTYhB2wXWsMRAJyo1PlxO4Q=
+periph.io/x/d2xx v0.0.4/go.mod h1:38Euaaj+s6l0faIRHh32a+PrjXvxFTFkPBEQI0TKg34=
+periph.io/x/host/v3 v3.7.2 h1:rCAUxkzy2xrzh18HP2AoVwTL/fEKqmcJ1icsZQGM58Q=
+periph.io/x/host/v3 v3.7.2/go.mod h1:nHMlzkPwmnHyP9Tn0I8FV+e0N3K7TjFXLZkIWzAicog=
