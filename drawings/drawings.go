@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math"
 
-	"github.com/marksaravi/drawings-go/colors"
 	"github.com/marksaravi/fonts-go/fonts"
 )
 
@@ -40,9 +39,9 @@ type arcSector struct {
 }
 
 type pixelDevice interface {
+	Pixel(x, y int, color any) error
+	Clear(color any) error
 	Update() int
-	Pixel(x, y int, color colors.Color)
-	Clear(color colors.Color)
 	ScreenWidth() int
 	ScreenHeight() int
 }
@@ -52,11 +51,11 @@ type Sketcher interface {
 	SetRotation(rotation int)
 	ScreenWidth() int
 	ScreenHeight() int
-	SetBackgroundColor(color colors.Color)
-	SetColor(color colors.Color)
+	SetBackgroundColor(color interface{}) error
+	SetColor(color interface{}) error
 	ClearArea(x1, y1, x2, y2 float64)
 	Clear()
-	// Pixel(x, y float64)
+	Pixel(x, y float64)
 	Line(x1, y1, x2, y2 float64)
 	Arc(xc, yc, radius, startAngle, endAngle float64)
 	ThickArc(xc, yc, radius, startAngle, endAngle float64, width int, widthType WidthType)
@@ -75,8 +74,8 @@ type Sketcher interface {
 
 type sketcher struct {
 	pixeldev        pixelDevice
-	color           colors.Color
-	bgColor         colors.Color
+	color           interface{}
+	bgColor         interface{}
 	font            interface{}
 	bitmapFont      fonts.BitmapFont
 	fontType        FontType
@@ -91,8 +90,6 @@ type sketcher struct {
 func NewSketcher(pixeldev pixelDevice) Sketcher {
 	return &sketcher{
 		pixeldev:        pixeldev,
-		color:           colors.WHITE,
-		bgColor:         colors.BLACK,
 		fontType:        BITMAP_FONT,
 		font:            fonts.FreeMono18pt7b,
 		cursorX:         0,
@@ -126,12 +123,26 @@ func (d *sketcher) ScreenHeight() int {
 	return d.pixeldev.ScreenHeight()
 }
 
-func (d *sketcher) SetBackgroundColor(color colors.Color) {
-	d.bgColor = color
+func (d *sketcher) checkColor(color interface{}) error {
+	return d.pixeldev.Pixel(-1000000, -1000000, color)
 }
 
-func (d *sketcher) SetColor(color colors.Color) {
+func (d *sketcher) SetBackgroundColor(color interface{}) error {
+	err := d.checkColor(color)
+	if err != nil {
+		return err
+	}
+	d.bgColor = color
+	return nil
+}
+
+func (d *sketcher) SetColor(color interface{}) error {
+	err := d.checkColor(color)
+	if err != nil {
+		return err
+	}
 	d.color = color
+	return nil
 }
 
 func (d *sketcher) ClearArea(x1, y1, x2, y2 float64) {
@@ -174,9 +185,13 @@ func (d *sketcher) rotatePoint(x, y float64) (float64, float64) {
 	return y, float64(d.pixeldev.ScreenHeight()) - x
 }
 
-func (d *sketcher) rotatedPixel(x, y float64, color colors.Color) {
+func (d *sketcher) rotatedPixel(x, y float64, color interface{}) {
 	rotatedX, rotatedY := d.rotatePoint(x, y)
 	d.pixeldev.Pixel(int(math.Round(rotatedX)), int(math.Round(rotatedY)), color)
+}
+
+func (d *sketcher) Pixel(x, y float64) {
+	d.rotatePoint(x, y)
 }
 
 func (d *sketcher) Line(x1, y1, x2, y2 float64) {

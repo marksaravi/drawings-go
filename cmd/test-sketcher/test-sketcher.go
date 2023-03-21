@@ -6,17 +6,14 @@ import (
 	"math"
 	"time"
 
-	devgpio "github.com/marksaravi/devices-go/hardware/gpio"
-	"github.com/marksaravi/devices-go/hardware/ili9341"
-	"github.com/marksaravi/drawings-go/colors"
 	"github.com/marksaravi/drawings-go/drawings"
+	"github.com/marksaravi/drivers-go/colors"
+	"github.com/marksaravi/drivers-go/hardware/gpio"
+	"github.com/marksaravi/drivers-go/hardware/ili9341"
+	"github.com/marksaravi/drivers-go/hardware/spi"
+
 	"github.com/marksaravi/fonts-go/fonts"
-	"periph.io/x/conn/v3/gpio"
-	"periph.io/x/conn/v3/gpio/gpioreg"
-	"periph.io/x/conn/v3/physic"
-	"periph.io/x/conn/v3/spi"
 	"periph.io/x/host/v3"
-	"periph.io/x/host/v3/sysfs"
 )
 
 func ToRad(degree float64) float64 {
@@ -27,13 +24,13 @@ func ToDeg(rad float64) float64 {
 	return rad / math.Pi * 180
 }
 
-type gpioOut struct {
-	pin gpio.PinOut
-}
+// type gpioOut struct {
+// 	pin gpio.PinOut
+// }
 
-func (p *gpioOut) Out(level devgpio.Level) {
-	p.pin.Out(gpio.Level(level))
-}
+// func (p *gpioOut) Out(level devgpio.Level) {
+// 	p.pin.Out(gpio.Level(level))
+// }
 
 func checkFatalErr(err error) {
 	if err != nil {
@@ -44,34 +41,33 @@ func checkFatalErr(err error) {
 func main() {
 	fmt.Println("Testing Sketcher...")
 	host.Init()
-	spiConn := createSPIConnection(1, 0)
-	dataCommandSelect := createGpioOutPin("GPIO22")
-	reset := createGpioOutPin("GPIO23")
+	spiConn := spi.NewSPI(1, 0, spi.Mode2, 64, 8)
+	dataCommandSelect := gpio.NewGPIOOut("GPIO22")
+	reset := gpio.NewGPIOOut("GPIO23")
 
-	ili9341Dev, err := ili9341.NewILI9341(spiConn, dataCommandSelect, reset)
+	ili9341Dev, err := ili9341.NewILI9341(ili9341.LCD_320x200, spiConn, dataCommandSelect, reset)
 	sketcher := drawings.NewSketcher(ili9341Dev)
 	checkFatalErr(err)
 	tests := []func(drawings.Sketcher){
 		drawPoints,
-		// drawCrossLines,
-		// drawLines,
-		// drawArc,
-		// draThickwArc,
-		// drawCircle,
-		// drawFillCircle,
-		// drawThickCircle,
-		// drawRectangle,
-		// drawFillRectangle,
-		// drawThickRectangle,
-		// drawFontsArea,
-		// drawDigits,
+		drawCrossLines,
+		drawLines,
+		drawArc,
+		draThickwArc,
+		drawCircle,
+		drawFillCircle,
+		drawThickCircle,
+		drawRectangle,
+		drawFillRectangle,
+		drawThickRectangle,
+		drawFontsArea,
+		drawDigits,
 		drawCalibrationPoints,
 	}
 
 	for i := 0; i < len(tests); i++ {
 		sketcher.SetBackgroundColor(colors.WHITE)
 		sketcher.Clear()
-		sketcher.Update()
 		ts := time.Now()
 		tests[i](sketcher)
 		numsegs := sketcher.Update()
@@ -79,6 +75,7 @@ func main() {
 		time.Sleep(time.Second / 10)
 	}
 	ili9341Dev.Update()
+	time.Sleep(time.Second)
 }
 
 func drawPoints(sketcher drawings.Sketcher) {
@@ -344,29 +341,4 @@ func drawCalibrationPoints(sketcher drawings.Sketcher) {
 		sketcher.Line(319-i, 239-i, 0+i, 239-i)
 		sketcher.Line(0+i, 239-i, 0+i, 0+i)
 	}
-}
-
-func createGpioOutPin(gpioPinNum string) devgpio.GPIOPinOut {
-	var pin gpio.PinOut = gpioreg.ByName(gpioPinNum)
-	if pin == nil {
-		checkFatalErr(fmt.Errorf("failed to create GPIO pin %s", gpioPinNum))
-	}
-	pin.Out(gpio.Low)
-	return &gpioOut{
-		pin: pin,
-	}
-}
-
-func createSPIConnection(busNumber int, chipSelect int) spi.Conn {
-	spibus, _ := sysfs.NewSPI(
-		busNumber,
-		chipSelect,
-	)
-	spiConn, err := spibus.Connect(
-		physic.Frequency(64)*physic.MegaHertz,
-		spi.Mode2,
-		8,
-	)
-	checkFatalErr(err)
-	return spiConn
 }
