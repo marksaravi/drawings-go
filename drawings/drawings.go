@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math"
 
-	"github.com/marksaravi/drawings-go/colors"
 	"github.com/marksaravi/fonts-go/fonts"
 )
 
@@ -40,9 +39,10 @@ type arcSector struct {
 }
 
 type pixelDevice interface {
+	SetColor(color any) error
+	Pixel(x, y int)
+	Clear()
 	Update() int
-	Pixel(x, y int, color colors.Color)
-	Clear(color colors.Color)
 	ScreenWidth() int
 	ScreenHeight() int
 }
@@ -52,11 +52,11 @@ type Sketcher interface {
 	SetRotation(rotation int)
 	ScreenWidth() int
 	ScreenHeight() int
-	SetBackgroundColor(color colors.Color)
-	SetColor(color colors.Color)
+	SetBackgroundColor(color any) error
+	SetColor(color any) error
 	ClearArea(x1, y1, x2, y2 float64)
 	Clear()
-	// Pixel(x, y float64)
+	Pixel(x, y float64)
 	Line(x1, y1, x2, y2 float64)
 	Arc(xc, yc, radius, startAngle, endAngle float64)
 	ThickArc(xc, yc, radius, startAngle, endAngle float64, width int, widthType WidthType)
@@ -66,7 +66,7 @@ type Sketcher interface {
 	ThickCircle(x, y, radius float64, width int, widthType WidthType)
 	FillRectangle(x1, y1, x2, y2 float64)
 	ThickRectangle(x1, y1, x2, y2 float64, width int, widthType WidthType)
-	SetFont(font interface{}) error
+	SetFont(font any) error
 	WriteScaled(text string, xscale, yscale int)
 	Write(text string)
 	MoveCursor(x, y int)
@@ -75,9 +75,9 @@ type Sketcher interface {
 
 type sketcher struct {
 	pixeldev        pixelDevice
-	color           colors.Color
-	bgColor         colors.Color
-	font            interface{}
+	color           any
+	bgColor         any
+	font            any
 	bitmapFont      fonts.BitmapFont
 	fontType        FontType
 	cursorX         int
@@ -88,11 +88,9 @@ type sketcher struct {
 	rotation        int
 }
 
-func NewSketcher(pixeldev pixelDevice) Sketcher {
-	return &sketcher{
+func NewSketcher(pixeldev pixelDevice, defaultColor any) Sketcher {
+	s := sketcher{
 		pixeldev:        pixeldev,
-		color:           colors.WHITE,
-		bgColor:         colors.BLACK,
 		fontType:        BITMAP_FONT,
 		font:            fonts.FreeMono18pt7b,
 		cursorX:         0,
@@ -101,7 +99,10 @@ func NewSketcher(pixeldev pixelDevice) Sketcher {
 		textLeftPadding: 0,
 		textTopPadding:  0,
 		rotation:        ROTATION_0,
+		color:           defaultColor,
+		bgColor:         defaultColor,
 	}
+	return &s
 }
 
 func (d *sketcher) Update() int {
@@ -126,19 +127,28 @@ func (d *sketcher) ScreenHeight() int {
 	return d.pixeldev.ScreenHeight()
 }
 
-func (d *sketcher) SetBackgroundColor(color colors.Color) {
+func (d *sketcher) SetBackgroundColor(color any) error {
+	err := d.pixeldev.SetColor(d.color)
+	if err != nil {
+		return err
+	}
 	d.bgColor = color
+	d.pixeldev.SetColor(d.color)
+	return nil
 }
 
-func (d *sketcher) SetColor(color colors.Color) {
+func (d *sketcher) SetColor(color any) error {
 	d.color = color
+	return d.pixeldev.SetColor(d.color)
 }
 
 func (d *sketcher) ClearArea(x1, y1, x2, y2 float64) {
+	d.pixeldev.SetColor(d.bgColor)
 	xs := int(math.Round(x1))
 	xe := int(math.Round(x2))
 	ys := int(math.Round(y1))
 	ye := int(math.Round(y2))
+
 	if x1 > x2 {
 		t := xs
 		xs = xe
@@ -149,16 +159,18 @@ func (d *sketcher) ClearArea(x1, y1, x2, y2 float64) {
 		ys = ye
 		ye = t
 	}
+
 	for x := xs; x <= xe; x += 1 {
 		for y := ys; y <= ye; y += 1 {
-			d.rotatedPixel(float64(x), float64(y), d.bgColor)
+			d.rotatedPixel(float64(x), float64(y))
 		}
 	}
 }
 
 // Drawing methods
 func (d *sketcher) Clear() {
-	d.pixeldev.Clear(d.bgColor)
+	d.pixeldev.SetColor(d.bgColor)
+	d.pixeldev.Clear()
 }
 
 func (d *sketcher) rotatePoint(x, y float64) (float64, float64) {
@@ -174,12 +186,18 @@ func (d *sketcher) rotatePoint(x, y float64) (float64, float64) {
 	return y, float64(d.pixeldev.ScreenHeight()) - x
 }
 
-func (d *sketcher) rotatedPixel(x, y float64, color colors.Color) {
+func (d *sketcher) rotatedPixel(x, y float64) {
 	rotatedX, rotatedY := d.rotatePoint(x, y)
-	d.pixeldev.Pixel(int(math.Round(rotatedX)), int(math.Round(rotatedY)), color)
+	d.pixeldev.Pixel(int(math.Round(rotatedX)), int(math.Round(rotatedY)))
+}
+
+func (d *sketcher) Pixel(x, y float64) {
+	d.pixeldev.SetColor(d.color)
+	d.rotatePoint(x, y)
 }
 
 func (d *sketcher) Line(x1, y1, x2, y2 float64) {
+	d.pixeldev.SetColor(d.color)
 	// Bresenham's line algorithm https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
 	xs := int(math.Round(x1))
 	ys := int(math.Round(y1))
@@ -200,7 +218,7 @@ func (d *sketcher) Line(x1, y1, x2, y2 float64) {
 	err := dx + dy
 
 	for {
-		d.rotatedPixel(float64(xs), float64(ys), d.color)
+		d.rotatedPixel(float64(xs), float64(ys))
 		if xs == xe && ys == ye {
 			break
 		}
@@ -287,11 +305,12 @@ func (dev *sketcher) arcPutPixel(sector int, xc, yc, x, y float64, s arcSector) 
 		isInsideSector3,
 	}
 	if tests[sector](x, y, s.xs, s.ys, s.xe, s.ye) {
-		dev.rotatedPixel(x+xc, y+yc, dev.color)
+		dev.rotatedPixel(x+xc, y+yc)
 	}
 }
 
 func (dev *sketcher) Arc(xc, yc, radius, startAngle, endAngle float64) {
+	dev.pixeldev.SetColor(dev.color)
 	signs := [4][2]float64{{1, 1}, {-1, 1}, {-1, -1}, {1, -1}}
 	iradius := math.Round(radius)
 	sectormaps := findArcSectors(startAngle, endAngle, iradius)
@@ -316,6 +335,7 @@ func (dev *sketcher) Arc(xc, yc, radius, startAngle, endAngle float64) {
 }
 
 func (dev *sketcher) ThickArc(xc, yc, radius, startAngle, endAngle float64, width int, widthType WidthType) {
+	dev.pixeldev.SetColor(dev.color)
 	rs := calcThicknessStart(radius, width, widthType)
 	for dr := 0; dr < width; dr++ {
 		dev.Arc(xc, yc, rs-float64(dr), startAngle, endAngle)
@@ -323,17 +343,18 @@ func (dev *sketcher) ThickArc(xc, yc, radius, startAngle, endAngle float64, widt
 }
 
 func (dev *sketcher) Circle(x, y, radius float64) {
+	dev.pixeldev.SetColor(dev.color)
 	// Midpoint circle algorithm https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
 	putpixels := func(xc, yc, dr, d float64) {
-		dev.rotatedPixel(xc+d, yc+dr, dev.color)
-		dev.rotatedPixel(xc+d, yc-dr, dev.color)
-		dev.rotatedPixel(xc+dr, yc+d, dev.color)
-		dev.rotatedPixel(xc+dr, yc-d, dev.color)
+		dev.rotatedPixel(xc+d, yc+dr)
+		dev.rotatedPixel(xc+d, yc-dr)
+		dev.rotatedPixel(xc+dr, yc+d)
+		dev.rotatedPixel(xc+dr, yc-d)
 
-		dev.rotatedPixel(xc-d, yc+dr, dev.color)
-		dev.rotatedPixel(xc-d, yc-dr, dev.color)
-		dev.rotatedPixel(xc-dr, yc+d, dev.color)
-		dev.rotatedPixel(xc-dr, yc-d, dev.color)
+		dev.rotatedPixel(xc-d, yc+dr)
+		dev.rotatedPixel(xc-d, yc-dr)
+		dev.rotatedPixel(xc-dr, yc+d)
+		dev.rotatedPixel(xc-dr, yc-d)
 	}
 
 	var dy float64 = radius
@@ -344,6 +365,7 @@ func (dev *sketcher) Circle(x, y, radius float64) {
 }
 
 func (dev *sketcher) FillCircle(x, y, radius float64) {
+	dev.pixeldev.SetColor(dev.color)
 	// Midpoint circle algorithm https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
 	putpixels := func(xc, yc, dr, d float64) {
 		dev.Line(xc+d, yc+dr, xc-d, yc+dr)
@@ -370,6 +392,7 @@ func calcThicknessStart(mid float64, width int, widthType WidthType) float64 {
 }
 
 func (dev *sketcher) ThickCircle(x, y, radius float64, width int, widthType WidthType) {
+	dev.pixeldev.SetColor(dev.color)
 	rs := calcThicknessStart(radius, width, widthType)
 	for dr := 0; dr < width; dr++ {
 		dev.Circle(x, y, rs-float64(dr))
@@ -377,6 +400,7 @@ func (dev *sketcher) ThickCircle(x, y, radius float64, width int, widthType Widt
 }
 
 func (dev *sketcher) Rectangle(x1, y1, x2, y2 float64) {
+	dev.pixeldev.SetColor(dev.color)
 	dev.Line(x1, y1, x2, y1)
 	dev.Line(x2, y1, x2, y2)
 	dev.Line(x2, y2, x1, y2)
@@ -384,6 +408,7 @@ func (dev *sketcher) Rectangle(x1, y1, x2, y2 float64) {
 }
 
 func (dev *sketcher) FillRectangle(x1, y1, x2, y2 float64) {
+	dev.pixeldev.SetColor(dev.color)
 	l := math.Round(y2 - y1)
 	dy := float64(1)
 	if l < 0 {
@@ -396,6 +421,7 @@ func (dev *sketcher) FillRectangle(x1, y1, x2, y2 float64) {
 }
 
 func (dev *sketcher) ThickRectangle(x1, y1, x2, y2 float64, width int, widthType WidthType) {
+	dev.pixeldev.SetColor(dev.color)
 	xs := x1
 	xe := x2
 	if x2 < x1 {
@@ -414,7 +440,7 @@ func (dev *sketcher) ThickRectangle(x1, y1, x2, y2 float64, width int, widthType
 	}
 }
 
-func (dev *sketcher) SetFont(font interface{}) error {
+func (dev *sketcher) SetFont(font any) error {
 	dev.font = font
 	if bitmapfont, ok := font.(fonts.BitmapFont); ok {
 		dev.fontType = BITMAP_FONT
@@ -480,6 +506,7 @@ func (dev *sketcher) GetTextArea(text string) (x1, y1, x2, y2 int) {
 }
 
 func (dev *sketcher) drawBitmapChar(char byte, xscale, yscale int) {
+	dev.pixeldev.SetColor(dev.color)
 	glyph := dev.bitmapFont.Glyphs[char-0x20]
 	for h := 0; h < glyph.Height; h++ {
 		for w := 0; w < glyph.Width; w++ {
@@ -488,15 +515,16 @@ func (dev *sketcher) drawBitmapChar(char byte, xscale, yscale int) {
 			d := dev.bitmapFont.Bitmap[glyph.BitmapOffset+bitIndex/8]
 			mask := byte(0b10000000) >> shift
 			bit := d & mask
-			color := dev.bgColor
+			dev.pixeldev.SetColor(dev.bgColor)
 			if bit != 0 {
-				color = dev.color
+				dev.pixeldev.SetColor(dev.color)
 			}
 			x := dev.cursorX + (w+glyph.XOffset)*xscale
 			y := dev.cursorY + (h+glyph.YOffset)*yscale
+
 			for dx := 0; dx < xscale; dx++ {
 				for dy := 0; dy < yscale; dy++ {
-					dev.rotatedPixel(float64(x+dx), float64(y+dy), color)
+					dev.rotatedPixel(float64(x+dx), float64(y+dy))
 				}
 			}
 		}
