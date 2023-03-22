@@ -24,14 +24,6 @@ func ToDeg(rad float64) float64 {
 	return rad / math.Pi * 180
 }
 
-// type gpioOut struct {
-// 	pin gpio.PinOut
-// }
-
-// func (p *gpioOut) Out(level devgpio.Level) {
-// 	p.pin.Out(gpio.Level(level))
-// }
-
 func checkFatalErr(err error) {
 	if err != nil {
 		log.Fatal(err)
@@ -41,7 +33,7 @@ func checkFatalErr(err error) {
 func main() {
 	fmt.Println("Testing Sketcher...")
 	host.Init()
-	spiConn := spi.NewSPI(1, 0, spi.Mode2, 64, 8)
+	spiConn := spi.NewSPI(1, 0, spi.Mode0, 11, 8)
 	dataCommandSelect := gpio.NewGPIOOut("GPIO22")
 	reset := gpio.NewGPIOOut("GPIO23")
 
@@ -74,7 +66,9 @@ func main() {
 		fmt.Println("Update Duration(ms): ", time.Since(ts).Milliseconds(), ", Num of updated Segments: ", numsegs)
 		time.Sleep(time.Second / 10)
 	}
-	ili9341Dev.Update()
+	sketcher.SetBackgroundColor(colors.WHITE)
+	sketcher.Clear()
+	fmt.Println(ili9341Dev.Update())
 	time.Sleep(time.Second)
 }
 
