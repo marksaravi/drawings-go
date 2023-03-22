@@ -33,12 +33,12 @@ func checkFatalErr(err error) {
 func main() {
 	fmt.Println("Testing Sketcher...")
 	host.Init()
-	spiConn := spi.NewSPI(1, 0, spi.Mode0, 11, 8)
+	spiConn := spi.NewSPI(1, 0, spi.Mode0, 64, 8)
 	dataCommandSelect := gpio.NewGPIOOut("GPIO22")
 	reset := gpio.NewGPIOOut("GPIO23")
 
 	ili9341Dev, err := ili9341.NewILI9341(ili9341.LCD_320x200, spiConn, dataCommandSelect, reset)
-	sketcher := drawings.NewSketcher(ili9341Dev)
+	sketcher := drawings.NewSketcher(ili9341Dev, colors.BLACK)
 	checkFatalErr(err)
 	tests := []func(drawings.Sketcher){
 		drawPoints,
@@ -64,11 +64,8 @@ func main() {
 		tests[i](sketcher)
 		numsegs := sketcher.Update()
 		fmt.Println("Update Duration(ms): ", time.Since(ts).Milliseconds(), ", Num of updated Segments: ", numsegs)
-		time.Sleep(time.Second / 10)
+		time.Sleep(time.Second / 2)
 	}
-	sketcher.SetBackgroundColor(colors.WHITE)
-	sketcher.Clear()
-	fmt.Println(ili9341Dev.Update())
 	time.Sleep(time.Second)
 }
 
@@ -301,6 +298,9 @@ func drawGrids(sketcher drawings.Sketcher) {
 }
 
 func drawDigits(sketcher drawings.Sketcher) {
+	sketcher.SetColor(colors.BLACK)
+	sketcher.SetBackgroundColor(colors.WHITE)
+	sketcher.Clear()
 	sketcher.SetRotation(drawings.ROTATION_90)
 	sketcher.SetFont(fonts.FreeSans24pt7b)
 	X := 30
@@ -314,11 +314,12 @@ func drawDigits(sketcher drawings.Sketcher) {
 }
 
 func drawCalibrationPoints(sketcher drawings.Sketcher) {
+	sketcher.SetRotation(drawings.ROTATION_0)
 	const PADDING float64 = 40
 	const RADIUS float64 = 5
 	const N_SEGMENTS int = 2
-	const X_OFFSET float64 = (320 - PADDING*2) / float64(N_SEGMENTS)
-	const Y_OFFSET float64 = (240 - PADDING*2) / float64(N_SEGMENTS)
+	var X_OFFSET float64 = (float64(sketcher.ScreenWidth()) - PADDING*2) / float64(N_SEGMENTS)
+	var Y_OFFSET float64 = (float64(sketcher.ScreenHeight()) - PADDING*2) / float64(N_SEGMENTS)
 	sketcher.SetColor(colors.RED)
 	for xseg := 0; xseg <= N_SEGMENTS; xseg++ {
 		x := float64(xseg) * X_OFFSET
