@@ -39,9 +39,8 @@ type arcSector struct {
 }
 
 type pixelDevice interface {
-	SetColor(color any) error
-	Pixel(x, y int)
-	Clear()
+	Pixel(x, y int, color any) error
+	Clear(color any) error
 	Update() int
 	ScreenWidth() int
 	ScreenHeight() int
@@ -52,23 +51,21 @@ type Sketcher interface {
 	SetRotation(rotation int)
 	ScreenWidth() int
 	ScreenHeight() int
-	SetBackgroundColor(color any) error
-	SetColor(color any) error
-	ClearArea(x1, y1, x2, y2 float64)
-	Clear()
-	Pixel(x, y float64)
-	Line(x1, y1, x2, y2 float64)
-	Arc(xc, yc, radius, startAngle, endAngle float64)
-	ThickArc(xc, yc, radius, startAngle, endAngle float64, width int, widthType WidthType)
-	Circle(x, y, radius float64)
-	Rectangle(x1, y1, x2, y2 float64)
-	FillCircle(x, y, radius float64)
-	ThickCircle(x, y, radius float64, width int, widthType WidthType)
-	FillRectangle(x1, y1, x2, y2 float64)
-	ThickRectangle(x1, y1, x2, y2 float64, width int, widthType WidthType)
+	ClearArea(x1, y1, x2, y2 float64, color any)
+	Clear(color any)
+	Pixel(x, y float64, color any)
+	Line(x1, y1, x2, y2 float64, color any)
+	Arc(xc, yc, radius, startAngle, endAngle float64, color any)
+	ThickArc(xc, yc, radius, startAngle, endAngle float64, width int, widthType WidthType, color any)
+	Circle(x, y, radius float64, color any)
+	Rectangle(x1, y1, x2, y2 float64, color any)
+	FillCircle(x, y, radius float64, color any)
+	ThickCircle(x, y, radius float64, width int, widthType WidthType, color any)
+	FillRectangle(x1, y1, x2, y2 float64, color any)
+	ThickRectangle(x1, y1, x2, y2 float64, width int, widthType WidthType, color any)
 	SetFont(font any) error
-	WriteScaled(text string, xscale, yscale int)
-	Write(text string)
+	WriteScaled(text string, xscale, yscale int, color any)
+	Write(text string, color any)
 	MoveCursor(x, y int)
 	GetTextArea(text string) (x1, y1, x2, y2 int)
 }
@@ -127,23 +124,7 @@ func (d *sketcher) ScreenHeight() int {
 	return d.pixeldev.ScreenHeight()
 }
 
-func (d *sketcher) SetBackgroundColor(color any) error {
-	err := d.pixeldev.SetColor(d.color)
-	if err != nil {
-		return err
-	}
-	d.bgColor = color
-	d.pixeldev.SetColor(d.color)
-	return nil
-}
-
-func (d *sketcher) SetColor(color any) error {
-	d.color = color
-	return d.pixeldev.SetColor(d.color)
-}
-
-func (d *sketcher) ClearArea(x1, y1, x2, y2 float64) {
-	d.pixeldev.SetColor(d.bgColor)
+func (d *sketcher) ClearArea(x1, y1, x2, y2 float64, color any) {
 	xs := int(math.Round(x1))
 	xe := int(math.Round(x2))
 	ys := int(math.Round(y1))
@@ -162,15 +143,14 @@ func (d *sketcher) ClearArea(x1, y1, x2, y2 float64) {
 
 	for x := xs; x <= xe; x += 1 {
 		for y := ys; y <= ye; y += 1 {
-			d.rotatedPixel(float64(x), float64(y))
+			d.rotatedPixel(float64(x), float64(y), color)
 		}
 	}
 }
 
 // Drawing methods
-func (d *sketcher) Clear() {
-	d.pixeldev.SetColor(d.bgColor)
-	d.pixeldev.Clear()
+func (d *sketcher) Clear(color any) {
+	d.pixeldev.Clear(color)
 }
 
 func (d *sketcher) rotatePoint(x, y float64) (float64, float64) {
@@ -186,18 +166,16 @@ func (d *sketcher) rotatePoint(x, y float64) (float64, float64) {
 	return y, float64(d.pixeldev.ScreenHeight()) - x
 }
 
-func (d *sketcher) rotatedPixel(x, y float64) {
+func (d *sketcher) rotatedPixel(x, y float64, color any) {
 	rotatedX, rotatedY := d.rotatePoint(x, y)
-	d.pixeldev.Pixel(int(math.Round(rotatedX)), int(math.Round(rotatedY)))
+	d.pixeldev.Pixel(int(math.Round(rotatedX)), int(math.Round(rotatedY)), color)
 }
 
-func (d *sketcher) Pixel(x, y float64) {
-	d.pixeldev.SetColor(d.color)
-	d.rotatePoint(x, y)
+func (d *sketcher) Pixel(x, y float64, color any) {
+	d.rotatedPixel(x, y, color)
 }
 
-func (d *sketcher) Line(x1, y1, x2, y2 float64) {
-	d.pixeldev.SetColor(d.color)
+func (d *sketcher) Line(x1, y1, x2, y2 float64, color any) {
 	// Bresenham's line algorithm https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
 	xs := int(math.Round(x1))
 	ys := int(math.Round(y1))
@@ -218,7 +196,7 @@ func (d *sketcher) Line(x1, y1, x2, y2 float64) {
 	err := dx + dy
 
 	for {
-		d.rotatedPixel(float64(xs), float64(ys))
+		d.rotatedPixel(float64(xs), float64(ys), color)
 		if xs == xe && ys == ye {
 			break
 		}
@@ -297,7 +275,7 @@ func findArcSectors(startAngle, endAngle, radius float64) map[int][]arcSector {
 	return sectorsmap
 }
 
-func (dev *sketcher) arcPutPixel(sector int, xc, yc, x, y float64, s arcSector) {
+func (dev *sketcher) arcPutPixel(sector int, xc, yc, x, y float64, s arcSector, color any) {
 	tests := []func(x, y, xs, ys, xe, ye float64) bool{
 		isInsideSector0,
 		isInsideSector1,
@@ -305,12 +283,11 @@ func (dev *sketcher) arcPutPixel(sector int, xc, yc, x, y float64, s arcSector) 
 		isInsideSector3,
 	}
 	if tests[sector](x, y, s.xs, s.ys, s.xe, s.ye) {
-		dev.rotatedPixel(x+xc, y+yc)
+		dev.rotatedPixel(x+xc, y+yc, color)
 	}
 }
 
-func (dev *sketcher) Arc(xc, yc, radius, startAngle, endAngle float64) {
-	dev.pixeldev.SetColor(dev.color)
+func (dev *sketcher) Arc(xc, yc, radius, startAngle, endAngle float64, color any) {
 	signs := [4][2]float64{{1, 1}, {-1, 1}, {-1, -1}, {1, -1}}
 	iradius := math.Round(radius)
 	sectormaps := findArcSectors(startAngle, endAngle, iradius)
@@ -322,8 +299,8 @@ func (dev *sketcher) Arc(xc, yc, radius, startAngle, endAngle float64) {
 			sectors := sectormaps[sector]
 			for i := 0; i < len(sectors); i++ {
 				if sectors[i].ok {
-					dev.arcPutPixel(sector, xc, yc, signs[sector][0]*l1, signs[sector][1]*l2, sectors[i])
-					dev.arcPutPixel(sector, xc, yc, signs[sector][0]*l2, signs[sector][1]*l1, sectors[i])
+					dev.arcPutPixel(sector, xc, yc, signs[sector][0]*l1, signs[sector][1]*l2, sectors[i], color)
+					dev.arcPutPixel(sector, xc, yc, signs[sector][0]*l2, signs[sector][1]*l1, sectors[i], color)
 				}
 			}
 		}
@@ -334,27 +311,25 @@ func (dev *sketcher) Arc(xc, yc, radius, startAngle, endAngle float64) {
 	}
 }
 
-func (dev *sketcher) ThickArc(xc, yc, radius, startAngle, endAngle float64, width int, widthType WidthType) {
-	dev.pixeldev.SetColor(dev.color)
+func (dev *sketcher) ThickArc(xc, yc, radius, startAngle, endAngle float64, width int, widthType WidthType, color any) {
 	rs := calcThicknessStart(radius, width, widthType)
 	for dr := 0; dr < width; dr++ {
-		dev.Arc(xc, yc, rs-float64(dr), startAngle, endAngle)
+		dev.Arc(xc, yc, rs-float64(dr), startAngle, endAngle, color)
 	}
 }
 
-func (dev *sketcher) Circle(x, y, radius float64) {
-	dev.pixeldev.SetColor(dev.color)
+func (dev *sketcher) Circle(x, y, radius float64, color any) {
 	// Midpoint circle algorithm https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
 	putpixels := func(xc, yc, dr, d float64) {
-		dev.rotatedPixel(xc+d, yc+dr)
-		dev.rotatedPixel(xc+d, yc-dr)
-		dev.rotatedPixel(xc+dr, yc+d)
-		dev.rotatedPixel(xc+dr, yc-d)
+		dev.rotatedPixel(xc+d, yc+dr, color)
+		dev.rotatedPixel(xc+d, yc-dr, color)
+		dev.rotatedPixel(xc+dr, yc+d, color)
+		dev.rotatedPixel(xc+dr, yc-d, color)
 
-		dev.rotatedPixel(xc-d, yc+dr)
-		dev.rotatedPixel(xc-d, yc-dr)
-		dev.rotatedPixel(xc-dr, yc+d)
-		dev.rotatedPixel(xc-dr, yc-d)
+		dev.rotatedPixel(xc-d, yc+dr, color)
+		dev.rotatedPixel(xc-d, yc-dr, color)
+		dev.rotatedPixel(xc-dr, yc+d, color)
+		dev.rotatedPixel(xc-dr, yc-d, color)
 	}
 
 	var dy float64 = radius
@@ -364,15 +339,14 @@ func (dev *sketcher) Circle(x, y, radius float64) {
 	}
 }
 
-func (dev *sketcher) FillCircle(x, y, radius float64) {
-	dev.pixeldev.SetColor(dev.color)
+func (dev *sketcher) FillCircle(x, y, radius float64, color any) {
 	// Midpoint circle algorithm https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
 	putpixels := func(xc, yc, dr, d float64) {
-		dev.Line(xc+d, yc+dr, xc-d, yc+dr)
-		dev.Line(xc+d, yc-dr, xc-d, yc-dr)
+		dev.Line(xc+d, yc+dr, xc-d, yc+dr, color)
+		dev.Line(xc+d, yc-dr, xc-d, yc-dr, color)
 
-		dev.Line(xc+dr, yc+d, xc-dr, yc+d)
-		dev.Line(xc+dr, yc-d, xc-dr, yc-d)
+		dev.Line(xc+dr, yc+d, xc-dr, yc+d, color)
+		dev.Line(xc+dr, yc-d, xc-dr, yc-d, color)
 	}
 	for dr := float64(0); dr <= math.Ceil(radius*0.707); dr += 1 {
 		d := math.Sqrt(radius*radius - dr*dr)
@@ -391,24 +365,21 @@ func calcThicknessStart(mid float64, width int, widthType WidthType) float64 {
 	return from
 }
 
-func (dev *sketcher) ThickCircle(x, y, radius float64, width int, widthType WidthType) {
-	dev.pixeldev.SetColor(dev.color)
+func (dev *sketcher) ThickCircle(x, y, radius float64, width int, widthType WidthType, color any) {
 	rs := calcThicknessStart(radius, width, widthType)
 	for dr := 0; dr < width; dr++ {
-		dev.Circle(x, y, rs-float64(dr))
+		dev.Circle(x, y, rs-float64(dr), color)
 	}
 }
 
-func (dev *sketcher) Rectangle(x1, y1, x2, y2 float64) {
-	dev.pixeldev.SetColor(dev.color)
-	dev.Line(x1, y1, x2, y1)
-	dev.Line(x2, y1, x2, y2)
-	dev.Line(x2, y2, x1, y2)
-	dev.Line(x1, y2, x1, y1)
+func (dev *sketcher) Rectangle(x1, y1, x2, y2 float64, color any) {
+	dev.Line(x1, y1, x2, y1, color)
+	dev.Line(x2, y1, x2, y2, color)
+	dev.Line(x2, y2, x1, y2, color)
+	dev.Line(x1, y2, x1, y1, color)
 }
 
-func (dev *sketcher) FillRectangle(x1, y1, x2, y2 float64) {
-	dev.pixeldev.SetColor(dev.color)
+func (dev *sketcher) FillRectangle(x1, y1, x2, y2 float64, color any) {
 	l := math.Round(y2 - y1)
 	dy := float64(1)
 	if l < 0 {
@@ -416,12 +387,11 @@ func (dev *sketcher) FillRectangle(x1, y1, x2, y2 float64) {
 	}
 
 	for y := float64(0); y != l; y += dy {
-		dev.Line(x1, y1+y, x2, y1+y)
+		dev.Line(x1, y1+y, x2, y1+y, color)
 	}
 }
 
-func (dev *sketcher) ThickRectangle(x1, y1, x2, y2 float64, width int, widthType WidthType) {
-	dev.pixeldev.SetColor(dev.color)
+func (dev *sketcher) ThickRectangle(x1, y1, x2, y2 float64, width int, widthType WidthType, color any) {
 	xs := x1
 	xe := x2
 	if x2 < x1 {
@@ -436,7 +406,7 @@ func (dev *sketcher) ThickRectangle(x1, y1, x2, y2 float64, width int, widthType
 	}
 	s := calcThicknessStart(0, width, widthType)
 	for dxy := float64(0); dxy < float64(width); dxy++ {
-		dev.Rectangle(xs-s+dxy, ys-s+dxy, xe+s-dxy, ye+s-dxy)
+		dev.Rectangle(xs-s+dxy, ys-s+dxy, xe+s-dxy, ye+s-dxy, color)
 	}
 }
 
@@ -450,21 +420,21 @@ func (dev *sketcher) SetFont(font any) error {
 	return errors.New("font format is not implemented")
 }
 
-func (dev *sketcher) writeChar(char byte, xscale, yscale int) error {
+func (dev *sketcher) writeChar(char byte, xscale, yscale int, color any) error {
 	if char < ' ' || char > '~' {
 		return errors.New("charCode code out of range")
 	}
 
 	switch dev.fontType {
 	case BITMAP_FONT:
-		dev.drawBitmapChar(char, xscale, yscale)
+		dev.drawBitmapChar(char, xscale, yscale, color)
 	default:
 		return errors.New("font is not defined")
 	}
 	return nil
 }
 
-func (dev *sketcher) WriteScaled(text string, xscale, yscale int) {
+func (dev *sketcher) WriteScaled(text string, xscale, yscale int, color any) {
 	if xscale < 1 {
 		xscale = 1
 	}
@@ -478,13 +448,13 @@ func (dev *sketcher) WriteScaled(text string, xscale, yscale int) {
 		yscale = MAX_FONT_SCALE
 	}
 	for i := 0; i < len(text); i++ {
-		dev.writeChar(text[i], xscale, yscale)
+		dev.writeChar(text[i], xscale, yscale, color)
 	}
 }
 
-func (dev *sketcher) Write(text string) {
+func (dev *sketcher) Write(text string, color any) {
 	for i := 0; i < len(text); i++ {
-		dev.writeChar(text[i], 1, 1)
+		dev.writeChar(text[i], 1, 1, color)
 	}
 }
 
@@ -505,8 +475,7 @@ func (dev *sketcher) GetTextArea(text string) (x1, y1, x2, y2 int) {
 	return
 }
 
-func (dev *sketcher) drawBitmapChar(char byte, xscale, yscale int) {
-	dev.pixeldev.SetColor(dev.color)
+func (dev *sketcher) drawBitmapChar(char byte, xscale, yscale int, color any) {
 	glyph := dev.bitmapFont.Glyphs[char-0x20]
 	for h := 0; h < glyph.Height; h++ {
 		for w := 0; w < glyph.Width; w++ {
@@ -515,16 +484,19 @@ func (dev *sketcher) drawBitmapChar(char byte, xscale, yscale int) {
 			d := dev.bitmapFont.Bitmap[glyph.BitmapOffset+bitIndex/8]
 			mask := byte(0b10000000) >> shift
 			bit := d & mask
-			dev.pixeldev.SetColor(dev.bgColor)
+			pixel := false
 			if bit != 0 {
-				dev.pixeldev.SetColor(dev.color)
+				pixel = true
 			}
 			x := dev.cursorX + (w+glyph.XOffset)*xscale
 			y := dev.cursorY + (h+glyph.YOffset)*yscale
 
 			for dx := 0; dx < xscale; dx++ {
 				for dy := 0; dy < yscale; dy++ {
-					dev.rotatedPixel(float64(x+dx), float64(y+dy))
+					if pixel {
+						dev.rotatedPixel(float64(x+dx), float64(y+dy), color)
+					}
+
 				}
 			}
 		}

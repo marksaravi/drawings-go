@@ -58,8 +58,7 @@ func main() {
 	}
 
 	for i := 0; i < len(tests); i++ {
-		sketcher.SetBackgroundColor(colors.WHITE)
-		sketcher.Clear()
+		sketcher.Clear(colors.WHITE)
 		ts := time.Now()
 		tests[i](sketcher)
 		numsegs := sketcher.Update()
@@ -71,8 +70,7 @@ func main() {
 
 func drawPoints(sketcher drawings.Sketcher) {
 	sketcher.SetRotation(drawings.ROTATION_0)
-	sketcher.SetColor(colors.RED)
-	sketcher.Circle(0, 0, 5)
+	sketcher.Circle(0, 0, 5, colors.RED)
 }
 
 func drawCrossLines(sketcher drawings.Sketcher) {
@@ -80,17 +78,12 @@ func drawCrossLines(sketcher drawings.Sketcher) {
 	xmax := float64(sketcher.ScreenWidth() - 1)
 	ymax := float64(sketcher.ScreenHeight() - 1)
 	fmt.Println(xmax, ymax)
-	sketcher.SetBackgroundColor(colors.BLACK)
-	sketcher.Clear()
+	sketcher.Clear(colors.BLACK)
 	const OFFSET = 5
-	sketcher.SetColor(colors.RED)
-	sketcher.Line(OFFSET, OFFSET, xmax-OFFSET, OFFSET)
-	sketcher.SetColor(colors.GREEN)
-	sketcher.Line(xmax-OFFSET, OFFSET, xmax-OFFSET, ymax-OFFSET)
-	sketcher.SetColor(colors.BLUE)
-	sketcher.Line(xmax-OFFSET, ymax-OFFSET, OFFSET, ymax-OFFSET)
-	sketcher.SetColor(colors.PINK)
-	sketcher.Line(OFFSET, ymax-OFFSET, OFFSET, OFFSET)
+	sketcher.Line(OFFSET, OFFSET, xmax-OFFSET, OFFSET, colors.RED)
+	sketcher.Line(xmax-OFFSET, OFFSET, xmax-OFFSET, ymax-OFFSET, colors.GREEN)
+	sketcher.Line(xmax-OFFSET, ymax-OFFSET, OFFSET, ymax-OFFSET, colors.BLUE)
+	sketcher.Line(OFFSET, ymax-OFFSET, OFFSET, OFFSET, colors.PINK)
 }
 
 func drawLines(sketcher drawings.Sketcher) {
@@ -103,13 +96,11 @@ func drawLines(sketcher drawings.Sketcher) {
 	rAngle := 2 * math.Pi
 	dAngle := math.Pi / 180 * 5
 
-	sketcher.SetBackgroundColor(colors.WHITE)
-	sketcher.Clear()
-	sketcher.SetColor(colors.BLUE)
+	sketcher.Clear(colors.WHITE)
 	for angle := sAngle; angle < sAngle+rAngle; angle += dAngle {
 		x := math.Cos(angle) * radius
 		y := math.Sin(angle) * radius
-		sketcher.Line(xc, yc, xc+x, yc+y)
+		sketcher.Line(xc, yc, xc+x, yc+y, colors.BLUE)
 	}
 }
 
@@ -123,8 +114,7 @@ func drawCircle(sketcher drawings.Sketcher) {
 	xyc := [N][]float64{{xc, yc, radius}, {xc, yc, radius * .75}, {xc, yc, radius * .45}}
 	colorset := [N]colors.Color{colors.BLACK, colors.DARKBLUE, colors.DARKGREEN}
 	for i := 0; i < N; i++ {
-		sketcher.SetColor(colorset[i])
-		sketcher.Circle(xyc[i][0], xyc[i][1], xyc[i][2])
+		sketcher.Circle(xyc[i][0], xyc[i][1], xyc[i][2], colorset[i])
 	}
 }
 
@@ -133,8 +123,7 @@ func drawFillCircle(sketcher drawings.Sketcher) {
 	xyc := [N][]float64{{30, 30, 45}, {160, 120, 115}, {400, 400, 250}}
 	colorset := [N]colors.Color{colors.BLACK, colors.DARKBLUE, colors.DARKGREEN}
 	for i := 0; i < N; i++ {
-		sketcher.SetColor(colorset[i])
-		sketcher.FillCircle(xyc[i][0], xyc[i][1], xyc[i][2])
+		sketcher.FillCircle(xyc[i][0], xyc[i][1], xyc[i][2], colorset[i])
 	}
 }
 
@@ -150,10 +139,8 @@ func drawThickCircle(sketcher drawings.Sketcher) {
 	widhTypes := [N]drawings.WidthType{drawings.INNER_WIDTH, drawings.CENTER_WIDTH, drawings.OUTER_WIDTH}
 	const width = 10
 	for i := 0; i < N; i++ {
-		sketcher.SetColor(colorset[i])
-		sketcher.ThickCircle(xyc[i][0], xyc[i][1], xyc[i][2], width, widhTypes[i])
-		sketcher.SetColor(colors.RED)
-		sketcher.Circle(xyc[i][0], xyc[i][1], xyc[i][2])
+		sketcher.ThickCircle(xyc[i][0], xyc[i][1], xyc[i][2], width, widhTypes[i], colorset[i])
+		sketcher.Circle(xyc[i][0], xyc[i][1], xyc[i][2], colors.RED)
 	}
 }
 
@@ -189,12 +176,10 @@ func drawArc(sketcher drawings.Sketcher) {
 		{160, 120, 105, ToRad(315), ToRad(285)},
 	}
 	for i := 0; i < N; i++ {
-		sketcher.SetColor(colorset[i])
-		sketcher.Arc(xyc[i][0], xyc[i][1], xyc[i][2], xyc[i][3], xyc[i][4])
+		sketcher.Arc(xyc[i][0], xyc[i][1], xyc[i][2], xyc[i][3], xyc[i][4], colorset[i])
 	}
-	sketcher.SetColor(colors.RED)
-	sketcher.Line(160, 0, 160, 239)
-	sketcher.Line(0, 120, 319, 120)
+	sketcher.Line(160, 0, 160, 239, colors.RED)
+	sketcher.Line(0, 120, 319, 120, colors.RED)
 }
 
 func draThickwArc(sketcher drawings.Sketcher) {
@@ -213,10 +198,8 @@ func draThickwArc(sketcher drawings.Sketcher) {
 	}
 
 	for i := 0; i < N; i++ {
-		sketcher.SetColor(colorset[i])
-		sketcher.ThickArc(xyc[i][0], xyc[i][1], xyc[i][2], xyc[i][3], xyc[i][4], 10, widhTypes[i])
-		sketcher.SetColor(colors.RED)
-		sketcher.Arc(xyc[i][0], xyc[i][1], xyc[i][2], xyc[i][3], xyc[i][4])
+		sketcher.ThickArc(xyc[i][0], xyc[i][1], xyc[i][2], xyc[i][3], xyc[i][4], 10, widhTypes[i], colorset[i])
+		sketcher.Arc(xyc[i][0], xyc[i][1], xyc[i][2], xyc[i][3], xyc[i][4], colors.RED)
 	}
 }
 
@@ -225,8 +208,7 @@ func drawRectangle(sketcher drawings.Sketcher) {
 	xy := [N][]float64{{10, 10, 100, 100}, {50, 50, 200, 200}}
 	colorset := [N]colors.Color{colors.BLUE, colors.GREEN}
 	for i := 0; i < 2; i++ {
-		sketcher.SetColor(colorset[i])
-		sketcher.Rectangle(xy[i][0], xy[i][1], xy[i][2], xy[i][3])
+		sketcher.Rectangle(xy[i][0], xy[i][1], xy[i][2], xy[i][3], colorset[i])
 	}
 
 }
@@ -236,8 +218,7 @@ func drawFillRectangle(sketcher drawings.Sketcher) {
 	xy := [N][]float64{{100, 100, 10, 10}, {50, 50, 200, 200}}
 	colors := [N]colors.Color{colors.BLUE, colors.GREEN}
 	for i := 0; i < 2; i++ {
-		sketcher.SetColor(colors[i])
-		sketcher.FillRectangle(xy[i][0], xy[i][1], xy[i][2], xy[i][3])
+		sketcher.FillRectangle(xy[i][0], xy[i][1], xy[i][2], xy[i][3], colors[i])
 	}
 
 }
@@ -249,16 +230,13 @@ func drawThickRectangle(sketcher drawings.Sketcher) {
 	widhTypes := [N]drawings.WidthType{drawings.INNER_WIDTH, drawings.CENTER_WIDTH, drawings.OUTER_WIDTH}
 	const width = 10
 	for i := 0; i < N; i++ {
-		sketcher.SetColor(colorset[i])
-		sketcher.ThickRectangle(xy[i][0], xy[i][1], xy[i][2], xy[i][3], width, widhTypes[i])
-		sketcher.SetColor(colors.RED)
-		sketcher.Rectangle(xy[i][0], xy[i][1], xy[i][2], xy[i][3])
+		sketcher.ThickRectangle(xy[i][0], xy[i][1], xy[i][2], xy[i][3], width, widhTypes[i], colorset[i])
+		sketcher.Rectangle(xy[i][0], xy[i][1], xy[i][2], xy[i][3], colors.RED)
 	}
 
 }
 
 func drawFontsArea(sketcher drawings.Sketcher) {
-	sketcher.SetColor(colors.BLACK)
 	sketcher.SetFont(fonts.FreeSerif18pt7b)
 
 	const LEN = 12
@@ -277,30 +255,26 @@ func drawFontsArea(sketcher drawings.Sketcher) {
 
 		x1, y1, x2, y2 := sketcher.GetTextArea(text)
 		xoffset := 8
-		sketcher.SetColor(colors.RED)
-		sketcher.Rectangle(float64(xoffset+x1), float64(yline+y1), float64(xoffset+x2), float64(yline+y2))
-		sketcher.SetColor(colors.BLUE)
-		sketcher.Line(0, float64(yline), 319, float64(yline))
-		sketcher.SetColor(colors.BLACK)
+		sketcher.Rectangle(float64(xoffset+x1), float64(yline+y1), float64(xoffset+x2), float64(yline+y2), colors.RED)
+		sketcher.Line(0, float64(yline), 319, float64(yline), colors.BLUE)
+
 		sketcher.MoveCursor(xoffset, yline)
-		sketcher.Write(string(s))
+		sketcher.Write(string(s), colors.BLACK)
 		yline += 48
 	}
 }
 
 func drawGrids(sketcher drawings.Sketcher) {
 	for x := float64(0); x < 320; x += 32 {
-		sketcher.Line(x, 0, x, 239)
+		sketcher.Line(x, 0, x, 239, colors.RED)
 	}
 	for y := float64(0); y < 240; y += 24 {
-		sketcher.Line(0, y, 319, y)
+		sketcher.Line(0, y, 319, y, colors.RED)
 	}
 }
 
 func drawDigits(sketcher drawings.Sketcher) {
-	sketcher.SetColor(colors.BLACK)
-	sketcher.SetBackgroundColor(colors.WHITE)
-	sketcher.Clear()
+	sketcher.Clear(colors.WHITE)
 	sketcher.SetRotation(drawings.ROTATION_90)
 	sketcher.SetFont(fonts.FreeSans24pt7b)
 	X := 30
@@ -308,8 +282,7 @@ func drawDigits(sketcher drawings.Sketcher) {
 	value := 23.2
 	text := fmt.Sprintf("%4.1f", value)
 	sketcher.MoveCursor(X, Y)
-	sketcher.SetColor(colors.BLACK)
-	sketcher.WriteScaled(text, 2, 5)
+	sketcher.WriteScaled(text, 2, 5, colors.BLACK)
 	// drawGrids(sketcher)
 }
 
@@ -320,20 +293,19 @@ func drawCalibrationPoints(sketcher drawings.Sketcher) {
 	const N_SEGMENTS int = 2
 	var X_OFFSET float64 = (float64(sketcher.ScreenWidth()) - PADDING*2) / float64(N_SEGMENTS)
 	var Y_OFFSET float64 = (float64(sketcher.ScreenHeight()) - PADDING*2) / float64(N_SEGMENTS)
-	sketcher.SetColor(colors.RED)
+
 	for xseg := 0; xseg <= N_SEGMENTS; xseg++ {
 		x := float64(xseg) * X_OFFSET
 		for yseg := 0; yseg <= N_SEGMENTS; yseg++ {
 			y := float64(yseg) * Y_OFFSET
-			sketcher.FillCircle(x+PADDING, y+PADDING, RADIUS)
+			sketcher.FillCircle(x+PADDING, y+PADDING, RADIUS, colors.RED)
 		}
 	}
 
-	sketcher.SetColor(colors.RED)
 	for i := float64(0); i <= 0; i++ {
-		sketcher.Line(0+i, 0+i, 319-i, 0+i)
-		sketcher.Line(319-i, 0+i, 319-i, 239-i)
-		sketcher.Line(319-i, 239-i, 0+i, 239-i)
-		sketcher.Line(0+i, 239-i, 0+i, 0+i)
+		sketcher.Line(0+i, 0+i, 319-i, 0+i, colors.RED)
+		sketcher.Line(319-i, 0+i, 319-i, 239-i, colors.RED)
+		sketcher.Line(319-i, 239-i, 0+i, 239-i, colors.RED)
+		sketcher.Line(0+i, 239-i, 0+i, 0+i, colors.RED)
 	}
 }

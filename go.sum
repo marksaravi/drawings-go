@@ -5,6 +5,8 @@ github.com/marksaravi/drivers-go v1.0.1 h1:2QVC2S9wLPSfnh8V3lJOGkJdy+AkzGF6PGcxY
 github.com/marksaravi/drivers-go v1.0.1/go.mod h1:TbtR2rIogTP71/ZNBlBY68SeVdw57a9X0fuqkCbB4lA=
 github.com/marksaravi/drivers-go v1.0.2 h1:TcggySIzXp1LbJrCEDZKbly+awWF9aBegkok7ovqb6Y=
 github.com/marksaravi/drivers-go v1.0.2/go.mod h1:TbtR2rIogTP71/ZNBlBY68SeVdw57a9X0fuqkCbB4lA=
+github.com/marksaravi/drivers-go v1.0.3 h1:/eWyZ5BoKGYFxXQAB+TIl8Gdy9ff0LTRqEa2X3VyenU=
+github.com/marksaravi/drivers-go v1.0.3/go.mod h1:S6kzovbZrA9nvjI9grM1oTdRG+/OjDy4H//TwYbhKjI=
 github.com/marksaravi/fonts-go v0.1.0 h1:EjR3Qxjs4yA24dLrmk4pe3CXiJfGVvUaCwsgPjGPpNA=
 github.com/marksaravi/fonts-go v0.1.0/go.mod h1:G20Ju8c7mDqQFqjhHwP2yjDM4Upc0BYIEh00NSWDGHY=
 github.com/marksaravi/fonts-go v0.2.0 h1:QfJV2KyZ962dFEOV+j+btSu9C55oGcL8QMtchXUUijQ=
