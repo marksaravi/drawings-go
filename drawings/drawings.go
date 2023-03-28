@@ -48,25 +48,25 @@ type pixelDevice interface {
 
 type Sketcher interface {
 	Update() int
-	SetRotation(rotation int)
-	ScreenWidth() int
-	ScreenHeight() int
+	SetRotation(rotation float64)
+	ScreenWidth() float64
+	ScreenHeight() float64
 	ClearArea(x1, y1, x2, y2 float64, color any)
 	Clear(color any)
 	Pixel(x, y float64, color any)
 	Line(x1, y1, x2, y2 float64, color any)
 	Arc(xc, yc, radius, startAngle, endAngle float64, color any)
-	ThickArc(xc, yc, radius, startAngle, endAngle float64, width int, widthType WidthType, color any)
+	ThickArc(xc, yc, radius, startAngle, endAngle float64, width float64, widthType WidthType, color any)
 	Circle(x, y, radius float64, color any)
 	Rectangle(x1, y1, x2, y2 float64, color any)
 	FillCircle(x, y, radius float64, color any)
-	ThickCircle(x, y, radius float64, width int, widthType WidthType, color any)
+	ThickCircle(x, y, radius float64, width float64, widthType WidthType, color any)
 	FillRectangle(x1, y1, x2, y2 float64, color any)
-	ThickRectangle(x1, y1, x2, y2 float64, width int, widthType WidthType, color any)
+	ThickRectangle(x1, y1, x2, y2 float64, width float64, widthType WidthType, color any)
 	SetFont(font any) error
-	WriteScaled(text string, xscale, yscale int, color any)
+	WriteScaled(text string, xscale, yscale float64, color any)
 	Write(text string, color any)
-	MoveCursor(x, y int)
+	MoveCursor(x, y float64)
 	GetTextArea(x, y float64, text string, xscale, yscale float64) (x1, y1, x2, y2 float64)
 }
 
@@ -106,22 +106,22 @@ func (d *sketcher) Update() int {
 	return d.pixeldev.Update()
 }
 
-func (d *sketcher) SetRotation(rotation int) {
-	d.rotation = rotation
+func (d *sketcher) SetRotation(rotation float64) {
+	d.rotation = int(rotation)
 }
 
-func (d *sketcher) ScreenWidth() int {
+func (d *sketcher) ScreenWidth() float64 {
 	if d.rotation == ROTATION_90 || d.rotation == ROTATION_270 {
-		return d.pixeldev.ScreenHeight()
+		return float64(d.pixeldev.ScreenHeight())
 	}
-	return d.pixeldev.ScreenWidth()
+	return float64(d.pixeldev.ScreenWidth())
 }
 
-func (d *sketcher) ScreenHeight() int {
+func (d *sketcher) ScreenHeight() float64 {
 	if d.rotation == ROTATION_90 || d.rotation == ROTATION_270 {
-		return d.pixeldev.ScreenWidth()
+		return float64(d.pixeldev.ScreenWidth())
 	}
-	return d.pixeldev.ScreenHeight()
+	return float64(d.pixeldev.ScreenHeight())
 }
 
 func (d *sketcher) ClearArea(x1, y1, x2, y2 float64, color any) {
@@ -311,9 +311,9 @@ func (dev *sketcher) Arc(xc, yc, radius, startAngle, endAngle float64, color any
 	}
 }
 
-func (dev *sketcher) ThickArc(xc, yc, radius, startAngle, endAngle float64, width int, widthType WidthType, color any) {
+func (dev *sketcher) ThickArc(xc, yc, radius, startAngle, endAngle float64, width float64, widthType WidthType, color any) {
 	rs := calcThicknessStart(radius, width, widthType)
-	for dr := 0; dr < width; dr++ {
+	for dr := 0; dr < int(width); dr++ {
 		dev.Arc(xc, yc, rs-float64(dr), startAngle, endAngle, color)
 	}
 }
@@ -354,7 +354,7 @@ func (dev *sketcher) FillCircle(x, y, radius float64, color any) {
 	}
 }
 
-func calcThicknessStart(mid float64, width int, widthType WidthType) float64 {
+func calcThicknessStart(mid float64, width float64, widthType WidthType) float64 {
 	from := mid
 	switch widthType {
 	case OUTER_WIDTH:
@@ -365,9 +365,9 @@ func calcThicknessStart(mid float64, width int, widthType WidthType) float64 {
 	return from
 }
 
-func (dev *sketcher) ThickCircle(x, y, radius float64, width int, widthType WidthType, color any) {
+func (dev *sketcher) ThickCircle(x, y, radius float64, width float64, widthType WidthType, color any) {
 	rs := calcThicknessStart(radius, width, widthType)
-	for dr := 0; dr < width; dr++ {
+	for dr := 0; dr < int(width); dr++ {
 		dev.Circle(x, y, rs-float64(dr), color)
 	}
 }
@@ -391,7 +391,7 @@ func (dev *sketcher) FillRectangle(x1, y1, x2, y2 float64, color any) {
 	}
 }
 
-func (dev *sketcher) ThickRectangle(x1, y1, x2, y2 float64, width int, widthType WidthType, color any) {
+func (dev *sketcher) ThickRectangle(x1, y1, x2, y2 float64, width float64, widthType WidthType, color any) {
 	xs := x1
 	xe := x2
 	if x2 < x1 {
@@ -420,7 +420,7 @@ func (dev *sketcher) SetFont(font any) error {
 	return errors.New("font format is not implemented")
 }
 
-func (dev *sketcher) writeChar(char byte, xscale, yscale int, color any) error {
+func (dev *sketcher) writeChar(char byte, xscale, yscale float64, color any) error {
 	if char < ' ' || char > '~' {
 		return errors.New("charCode code out of range")
 	}
@@ -434,18 +434,18 @@ func (dev *sketcher) writeChar(char byte, xscale, yscale int, color any) error {
 	return nil
 }
 
-func (dev *sketcher) WriteScaled(text string, xscale, yscale int, color any) {
+func (dev *sketcher) WriteScaled(text string, xscale, yscale float64, color any) {
 	if xscale < 1 {
 		xscale = 1
 	}
 	if yscale < 1 {
 		yscale = 1
 	}
-	if xscale > MAX_FONT_SCALE {
-		xscale = MAX_FONT_SCALE
+	if xscale > float64(MAX_FONT_SCALE) {
+		xscale = float64(MAX_FONT_SCALE)
 	}
-	if yscale > MAX_FONT_SCALE {
-		yscale = MAX_FONT_SCALE
+	if yscale > float64(MAX_FONT_SCALE) {
+		yscale = float64(MAX_FONT_SCALE)
 	}
 	for i := 0; i < len(text); i++ {
 		dev.writeChar(text[i], xscale, yscale, color)
@@ -458,9 +458,9 @@ func (dev *sketcher) Write(text string, color any) {
 	}
 }
 
-func (dev *sketcher) MoveCursor(x, y int) {
-	dev.cursorX = x
-	dev.cursorY = y
+func (dev *sketcher) MoveCursor(x, y float64) {
+	dev.cursorX = int(x)
+	dev.cursorY = int(y)
 }
 
 func (dev *sketcher) GetTextArea(x, y float64, text string, xscale, yscale float64) (x1, y1, x2, y2 float64) {
@@ -475,7 +475,7 @@ func (dev *sketcher) GetTextArea(x, y float64, text string, xscale, yscale float
 	return
 }
 
-func (dev *sketcher) drawBitmapChar(char byte, xscale, yscale int, color any) {
+func (dev *sketcher) drawBitmapChar(char byte, xscale, yscale float64, color any) {
 	glyph := dev.bitmapFont.Glyphs[char-0x20]
 	for h := 0; h < glyph.Height; h++ {
 		for w := 0; w < glyph.Width; w++ {
@@ -488,11 +488,11 @@ func (dev *sketcher) drawBitmapChar(char byte, xscale, yscale int, color any) {
 			if bit != 0 {
 				pixel = true
 			}
-			x := dev.cursorX + (w+glyph.XOffset)*xscale
-			y := dev.cursorY + (h+glyph.YOffset)*yscale
+			x := dev.cursorX + (w+glyph.XOffset)*int(xscale)
+			y := dev.cursorY + (h+glyph.YOffset)*int(yscale)
 
-			for dx := 0; dx < xscale; dx++ {
-				for dy := 0; dy < yscale; dy++ {
+			for dx := 0; dx < int(xscale); dx++ {
+				for dy := 0; dy < int(yscale); dy++ {
 					if pixel {
 						dev.rotatedPixel(float64(x+dx), float64(y+dy), color)
 					}
@@ -501,7 +501,7 @@ func (dev *sketcher) drawBitmapChar(char byte, xscale, yscale int, color any) {
 			}
 		}
 	}
-	dev.cursorX += glyph.XAdvance * xscale
+	dev.cursorX += glyph.XAdvance * int(xscale)
 }
 
 func (dev *sketcher) getBitmapFontTextArea(x, y float64, text string, xscale, yscale float64) (float64, float64, float64, float64) {

@@ -243,7 +243,7 @@ func drawFontsArea(sketcher drawings.Sketcher) {
 	const FROM byte = 0x20 + 20
 	const TO byte = 0x7E
 	var c byte = FROM
-	yline := 32
+	yline := float64(32)
 
 	for c <= TO {
 		s := make([]byte, 0)
@@ -252,12 +252,12 @@ func drawFontsArea(sketcher drawings.Sketcher) {
 			c++
 		}
 		text := string(s)
-		xoffset := 8
+		xoffset := float64(8)
 		x1, y1, x2, y2 := sketcher.GetTextArea(float64(xoffset), float64(yline), text, 1, 1)
 
 		sketcher.Rectangle(float64(x1), float64(y1), float64(x2), float64(y2), colors.RED)
 		sketcher.Line(0, float64(yline), 319, float64(yline), colors.BLUE)
-		sketcher.MoveCursor(int(xoffset), yline)
+		sketcher.MoveCursor(xoffset, yline)
 		sketcher.Write(string(s), colors.BLACK)
 		yline += 48
 	}
@@ -275,8 +275,8 @@ func drawGrids(sketcher drawings.Sketcher) {
 func drawDigits(sketcher drawings.Sketcher) {
 	sketcher.SetRotation(drawings.ROTATION_270)
 	sketcher.SetFont(fonts.FreeSans24pt7b)
-	X := 30
-	Y := 120
+	X := float64(30)
+	Y := float64(120)
 	xScale := float64(1)
 	yScale := float64(1)
 	value := 23.2
