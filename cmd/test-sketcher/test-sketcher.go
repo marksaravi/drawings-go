@@ -33,7 +33,7 @@ func checkFatalErr(err error) {
 func main() {
 	fmt.Println("Testing Sketcher...")
 	host.Init()
-	spiConn := spi.NewSPI(1, 0, spi.Mode0, 64, 8)
+	spiConn := spi.NewSPI(1, 0, spi.Mode2, 64, 8)
 	dataCommandSelect := gpio.NewGPIOOut("GPIO22")
 	reset := gpio.NewGPIOOut("GPIO23")
 
@@ -66,6 +66,7 @@ func main() {
 		time.Sleep(time.Second / 2)
 	}
 	time.Sleep(time.Second)
+	fmt.Println("end")
 }
 
 func drawPoints(sketcher drawings.Sketcher) {
@@ -238,7 +239,6 @@ func drawThickRectangle(sketcher drawings.Sketcher) {
 
 func drawFontsArea(sketcher drawings.Sketcher) {
 	sketcher.SetFont(fonts.FreeSerif18pt7b)
-
 	const LEN = 12
 	const FROM byte = 0x20 + 20
 	const TO byte = 0x7E
@@ -252,12 +252,11 @@ func drawFontsArea(sketcher drawings.Sketcher) {
 			c++
 		}
 		text := string(s)
-
-		x1, y1, x2, y2 := sketcher.GetTextArea(text)
 		xoffset := 8
-		sketcher.Rectangle(float64(xoffset+x1), float64(yline+y1), float64(xoffset+x2), float64(yline+y2), colors.RED)
-		sketcher.Line(0, float64(yline), 319, float64(yline), colors.BLUE)
+		x1, y1, x2, y2 := sketcher.GetTextArea(xoffset, yline, text, 1, 1)
 
+		sketcher.Rectangle(float64(x1), float64(y1), float64(x2), float64(y2), colors.RED)
+		sketcher.Line(0, float64(yline), 319, float64(yline), colors.BLUE)
 		sketcher.MoveCursor(xoffset, yline)
 		sketcher.Write(string(s), colors.BLACK)
 		yline += 48
@@ -274,20 +273,23 @@ func drawGrids(sketcher drawings.Sketcher) {
 }
 
 func drawDigits(sketcher drawings.Sketcher) {
-	sketcher.Clear(colors.WHITE)
-	sketcher.SetRotation(drawings.ROTATION_90)
+	sketcher.SetRotation(drawings.ROTATION_270)
 	sketcher.SetFont(fonts.FreeSans24pt7b)
 	X := 30
-	Y := 200
+	Y := 120
+	xScale := 1
+	yScale := 1
 	value := 23.2
 	text := fmt.Sprintf("%4.1f", value)
+	x1, y1, x2, y2 := sketcher.GetTextArea(X, Y, text, xScale, yScale)
+	fmt.Println(x1, y1, x2, y2)
+	sketcher.Rectangle(float64(x1), float64(y1), float64(x2), float64(y2), colors.RED)
 	sketcher.MoveCursor(X, Y)
-	sketcher.WriteScaled(text, 2, 5, colors.BLACK)
-	// drawGrids(sketcher)
+	sketcher.Write(text, colors.BLACK)
 }
 
 func drawCalibrationPoints(sketcher drawings.Sketcher) {
-	sketcher.SetRotation(drawings.ROTATION_0)
+	sketcher.SetRotation(drawings.ROTATION_180)
 	const PADDING float64 = 40
 	const RADIUS float64 = 5
 	const N_SEGMENTS int = 2
