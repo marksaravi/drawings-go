@@ -67,7 +67,7 @@ type Sketcher interface {
 	WriteScaled(text string, xscale, yscale int, color any)
 	Write(text string, color any)
 	MoveCursor(x, y int)
-	GetTextArea(text string) (x1, y1, x2, y2 int)
+	GetTextArea(x, y int, text string, xscale, yscale int) (x1, y1, x2, y2 int)
 }
 
 type sketcher struct {
@@ -463,14 +463,14 @@ func (dev *sketcher) MoveCursor(x, y int) {
 	dev.cursorY = y
 }
 
-func (dev *sketcher) GetTextArea(text string) (x1, y1, x2, y2 int) {
+func (dev *sketcher) GetTextArea(x, y int, text string, xscale, yscale int) (x1, y1, x2, y2 int) {
 	x1 = 0
 	y1 = 0
 	x2 = 0
 	y2 = 0
 	switch dev.fontType {
 	case BITMAP_FONT:
-		x1, y1, x2, y2 = dev.getBitmapFontTextArea(text)
+		x1, y1, x2, y2 = dev.getBitmapFontTextArea(x, y, text, xscale, yscale)
 	}
 	return
 }
@@ -504,14 +504,14 @@ func (dev *sketcher) drawBitmapChar(char byte, xscale, yscale int, color any) {
 	dev.cursorX += glyph.XAdvance * xscale
 }
 
-func (dev *sketcher) getBitmapFontTextArea(text string) (int, int, int, int) {
+func (dev *sketcher) getBitmapFontTextArea(x, y int, text string, xscale, yscale int) (int, int, int, int) {
 	bytes := []byte(text)
 	ymax := 0
 	ymin := 0
-	x := 0
+	xmax := 0
 	for i := 0; i < len(bytes); i++ {
 		glyph := dev.bitmapFont.Glyphs[bytes[i]-0x20]
-		x += glyph.XAdvance
+		xmax += glyph.XAdvance
 		y := glyph.YOffset + glyph.Height
 		if y > ymax {
 			ymax = y
@@ -520,5 +520,6 @@ func (dev *sketcher) getBitmapFontTextArea(text string) (int, int, int, int) {
 			ymin = glyph.YOffset
 		}
 	}
-	return 0, ymin, x, ymax
+	height := ymax - ymin
+	return x, y + ymin, x + xmax*xscale, y + ymin + height*yscale
 }
