@@ -521,5 +521,5 @@ func (dev *sketcher) getBitmapFontTextArea(x, y int, text string, xscale, yscale
 		}
 	}
 	height := ymax - ymin
-	return x, y + ymin, x + xmax*xscale, y + ymin + height*yscale
+	return x, y + ymin*yscale, x + xmax*xscale, y + (ymin+height)*yscale
 }
