@@ -253,11 +253,11 @@ func drawFontsArea(sketcher drawings.Sketcher) {
 		}
 		text := string(s)
 		xoffset := 8
-		x1, y1, x2, y2 := sketcher.GetTextArea(xoffset, yline, text, 1, 1)
+		x1, y1, x2, y2 := sketcher.GetTextArea(float64(xoffset), float64(yline), text, 1, 1)
 
 		sketcher.Rectangle(float64(x1), float64(y1), float64(x2), float64(y2), colors.RED)
 		sketcher.Line(0, float64(yline), 319, float64(yline), colors.BLUE)
-		sketcher.MoveCursor(xoffset, yline)
+		sketcher.MoveCursor(int(xoffset), yline)
 		sketcher.Write(string(s), colors.BLACK)
 		yline += 48
 	}
@@ -277,11 +277,11 @@ func drawDigits(sketcher drawings.Sketcher) {
 	sketcher.SetFont(fonts.FreeSans24pt7b)
 	X := 30
 	Y := 120
-	xScale := 1
-	yScale := 1
+	xScale := float64(1)
+	yScale := float64(1)
 	value := 23.2
 	text := fmt.Sprintf("%4.1f", value)
-	x1, y1, x2, y2 := sketcher.GetTextArea(X, Y, text, xScale, yScale)
+	x1, y1, x2, y2 := sketcher.GetTextArea(float64(X), float64(Y), text, xScale, yScale)
 	fmt.Println(x1, y1, x2, y2)
 	sketcher.Rectangle(float64(x1), float64(y1), float64(x2), float64(y2), colors.RED)
 	sketcher.MoveCursor(X, Y)
