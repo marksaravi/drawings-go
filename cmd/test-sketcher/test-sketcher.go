@@ -33,7 +33,7 @@ func checkFatalErr(err error) {
 func main() {
 	fmt.Println("Testing Sketcher...")
 	host.Init()
-	spiConn := spi.NewSPI(1, 0, spi.Mode2, 64, 8)
+	spiConn := spi.NewSPI(0, 0, spi.Mode2, 64, 8)
 	dataCommandSelect := gpio.NewGPIOOut("GPIO22")
 	reset := gpio.NewGPIOOut("GPIO23")
 
